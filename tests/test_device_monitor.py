@@ -1,15 +1,10 @@
+"""Module providing unit tests for DeviceMonitor class"""
+
 import threading
-import pytest
 from unittest.mock import patch, MagicMock
 from device_monitor import DeviceMonitor
 from devices.device_interface import Device
 
-@pytest.fixture
-def mock_device():
-    """Function mocking device"""
-    device = MagicMock(spec=Device)
-    device.get_parameters.return_value = {"param1": 111, "param2": "active"}
-    return device
 
 def test_initial_parameters():
     """Test checking whether initials attributes of an object were set properly"""
@@ -42,7 +37,7 @@ def test_start_running(mock_thread):
     assert monitor.thread == created_thread
     mock_thread.assert_called_once()
 
-@patch.object(threading.Thread, "join")
+@patch("threading.Thread")
 def test_stop_when_running(_):
     """Test checking whether stop method terminates thread and sets running flag to negative"""
     monitor = DeviceMonitor()
@@ -83,15 +78,21 @@ def test_adding_devices_to_be_monitored():
         3: None
     }
 
-def test_read_devices_parameters(mock_device):
-    """Test checking wheter read_devices_parameters method works correctly"""
+def test_read_devices_parameters():
+    """Test checking whether read_devices_parameters method works correctly"""
+
     monitor = DeviceMonitor()
 
-    mock_device.get_parameters.return_value = {"param1": 111, "param2": "active"}
+    with patch("device_monitor.time.sleep",
+               side_effect=lambda x: setattr(monitor, 'running', False), return_value=None):
 
-    monitor.devices = {1: mock_device}
-    monitor.statuses = {}
-    monitor.running = True
-    monitor._read_devices_parameters()
+        mock_device = MagicMock(spec=Device)
+        mock_device.get_parameters.return_value = {"param1": 111, "param2": "something"}
 
-    assert monitor.statuses[0] == {"param1": 111, "param2": "active"}
+        monitor.devices = {1: mock_device}
+        monitor.running = True
+
+        monitor._read_devices_parameters()
+
+        mock_device.get_parameters.assert_called_once()
+        assert monitor.statuses == {1: {"param1": 111, "param2": "something"}}

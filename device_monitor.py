@@ -1,3 +1,5 @@
+"""Module providing implementation for DeviceMonitor class"""
+
 import threading
 import time
 from typing import Dict
@@ -14,10 +16,11 @@ class DeviceMonitor:
 
     def start(self):
         """Function starting monitoring devices in another thread"""
-        if not self.running:
-            self.running = True
-            self.thread = threading.Thread(target=self._read_devices_parameters)
-            self.thread.start()
+        with self.lock:
+            if not self.running:
+                self.running = True
+                self.thread = threading.Thread(target=self._read_devices_parameters)
+                self.thread.start()
 
     def stop(self):
         """Function stopping monitoring devices"""
@@ -46,7 +49,10 @@ class DeviceMonitor:
         """Function reading devices parameters"""
         while self.running:
             with self.lock:
-                for device_id, device in self.devices.items():
-                    self.statuses[device_id] = device.get_parameters()
+                self._get_device_parameters()
 
             time.sleep(1)
+
+    def _get_device_parameters(self):
+        for device_id, device in self.devices.items():
+            self.statuses[device_id] = device.get_parameters()

@@ -1,3 +1,5 @@
+"""Module providing implementation for Device class"""
+
 from typing import Dict
 
 class Device:

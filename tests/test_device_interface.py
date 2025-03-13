@@ -1,3 +1,5 @@
+"""Module providing unit tests for Device class"""
+
 import pytest
 from devices.device_interface import Device
 
